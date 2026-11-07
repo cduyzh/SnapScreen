@@ -5,6 +5,7 @@ public final class ScrollCapturePreviewWindow: NSPanel {
     private let thumbnail = NSImageView()
     private let heightLabel = NSTextField(labelWithString: "正在准备…")
     private let referenceLabel = NSTextField(labelWithString: "已接上的画面")
+    private let watermarkButton = NSButton()
     private let hintLabel = NSTextField(wrappingLabelWithString: "在选区内上下滚动，或选择自动捕获方向。")
     private let upButton = NSButton()
     private let downButton = NSButton()
@@ -58,10 +59,14 @@ public final class ScrollCapturePreviewWindow: NSPanel {
         hintLabel.font = .systemFont(ofSize: 12)
         hintLabel.textColor = .secondaryLabelColor
         hintLabel.maximumNumberOfLines = 5
-        for view in [thumbnail, heightLabel, referenceLabel, hintLabel] {
+        for view in [thumbnail, heightLabel, referenceLabel, hintLabel, watermarkButton] {
             view.translatesAutoresizingMaskIntoConstraints = false
             container.addSubview(view)
         }
+        watermarkButton.isHidden = true
+        watermarkButton.target = self
+        watermarkButton.action = #selector(watermarkClicked)
+        watermarkButton.bezelStyle = .inline
         let directions = NSStackView(views: [upButton, downButton])
         let actions = NSStackView(views: [cancelButton, recoverButton, doneButton])
         for row in [directions, actions] {
@@ -96,7 +101,9 @@ public final class ScrollCapturePreviewWindow: NSPanel {
             referenceLabel.topAnchor.constraint(equalTo: thumbnail.bottomAnchor, constant: 5),
             heightLabel.leadingAnchor.constraint(equalTo: thumbnail.trailingAnchor, constant: 16),
             heightLabel.topAnchor.constraint(equalTo: container.topAnchor, constant: 16),
-            heightLabel.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            watermarkButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
+            watermarkButton.centerYAnchor.constraint(equalTo: heightLabel.centerYAnchor),
+            heightLabel.trailingAnchor.constraint(lessThanOrEqualTo: watermarkButton.leadingAnchor, constant: -8),
             hintLabel.leadingAnchor.constraint(equalTo: heightLabel.leadingAnchor),
             hintLabel.trailingAnchor.constraint(equalTo: heightLabel.trailingAnchor),
             hintLabel.topAnchor.constraint(equalTo: heightLabel.bottomAnchor, constant: 8),
@@ -234,4 +241,34 @@ public final class ScrollCapturePreviewWindow: NSPanel {
     @objc private func recoverClicked() { onRecover?() }
     @objc private func doneClicked() { onDone?() }
     @objc private func cancelClicked() { onCancel?() }
+
+    private func updateWatermarkButtonState() {
+        let isPro = LicenseManager.shared.isPro
+        let removeWatermark = UserPreferences.shared.removeScrollWatermark
+
+        if isPro && removeWatermark {
+            watermarkButton.title = "已去水印"
+            watermarkButton.image = NSImage(systemSymbolName: "checkmark.circle.fill", accessibilityDescription: nil)
+            watermarkButton.contentTintColor = .systemGreen
+        } else if isPro {
+            watermarkButton.title = "保留水印"
+            watermarkButton.image = NSImage(systemSymbolName: "checkmark.seal", accessibilityDescription: nil)
+            watermarkButton.contentTintColor = .secondaryLabelColor
+        } else {
+            watermarkButton.title = "去水印 (Pro)"
+            watermarkButton.image = NSImage(systemSymbolName: "crown.fill", accessibilityDescription: nil)
+            watermarkButton.contentTintColor = .systemOrange
+        }
+        watermarkButton.font = .systemFont(ofSize: 11, weight: .medium)
+        watermarkButton.imagePosition = .imageLeading
+    }
+
+    @objc private func watermarkClicked() {
+        if !LicenseManager.shared.isPro {
+            PaywallWindowController.shared.show(reason: "去除长截图水印")
+        } else {
+            UserPreferences.shared.removeScrollWatermark.toggle()
+            updateWatermarkButtonState()
+        }
+    }
 }

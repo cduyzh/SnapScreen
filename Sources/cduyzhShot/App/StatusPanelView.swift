@@ -152,28 +152,68 @@ struct StatusPanelView: View {
         return "\(snapshot.pinCount) 张贴图 · \(snapshot.visiblePinCount) 张显示"
     }
 
+    private static let aquaBlue = Color(red: 0.04, green: 0.52, blue: 1.0)
+    private static let aquaCyan = Color(red: 0.0, green: 0.82, blue: 0.95)
+    private static let aquaGradient = LinearGradient(colors: [aquaBlue, aquaCyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+
     private var header: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "camera.viewfinder")
-                .font(.system(size: 23, weight: .medium))
-                .foregroundStyle(.blue)
-                .frame(width: 40, height: 40)
-                .background(Color.blue.opacity(0.1), in: RoundedRectangle(cornerRadius: 11))
-            VStack(alignment: .leading, spacing: 5) {
-                HStack(alignment: .firstTextBaseline, spacing: 7) {
-                    Text("cduyzhShot").font(.system(size: 18, weight: .semibold))
-                    Text(snapshot.version).font(.system(size: 10)).foregroundStyle(.tertiary)
+        HStack(spacing: 11) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 11)
+                    .fill(Self.aquaGradient)
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 11)
+                            .strokeBorder(Color.white.opacity(0.35), lineWidth: 0.6)
+                    )
+                    .shadow(color: Self.aquaBlue.opacity(0.35), radius: 6, x: 0, y: 2)
+
+                Image(systemName: "viewfinder")
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                // 第一行：产品主品牌识别 + 商业权益微光胶囊
+                HStack(alignment: .center, spacing: 6) {
+                    Text("iScreenshot")
+                        .font(.system(size: 15, weight: .bold))
+                        .lineLimit(1)
+                    Text("极速截屏")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+
+
                 }
-                HStack(spacing: 5) {
-                    Circle().fill(snapshot.statusColor).frame(width: 5, height: 5)
-                    Text(snapshot.statusTitle).font(.system(size: 11)).foregroundStyle(secondary)
+
+                // 第二行：运行就绪状态 + 元数据版本号
+                HStack(alignment: .center, spacing: 5) {
+                    Circle()
+                        .fill(snapshot.screenGranted ? Self.aquaCyan : snapshot.statusColor)
+                        .frame(width: 6, height: 6)
+                        .shadow(color: (snapshot.screenGranted ? Self.aquaCyan : snapshot.statusColor).opacity(0.6), radius: 3)
+                    Text(snapshot.statusTitle)
+                        .font(.system(size: 11))
+                        .foregroundStyle(secondary)
+                        .lineLimit(1)
+
+                    Text("·")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.tertiary)
+
+                    Text(snapshot.version)
+                        .font(.system(size: 10, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
                 .accessibilityElement(children: .combine)
             }
             Spacer(minLength: 0)
-            iconButton(.settings, symbol: "gearshape", label: "打开设置（⌘,）")
+            iconButton(.settings, symbol: "gearshape.fill", label: "打开设置（⌘,）")
         }
     }
+
+
 
     private func captureRow(_ action: StatusPanelAction, title: String, detail: String, symbol: String, color: Color, shortcut: String) -> some View {
         Button { onAction(action) } label: {
@@ -186,9 +226,14 @@ struct StatusPanelView: View {
                     Text(detail).font(.system(size: 10)).foregroundStyle(secondary).lineLimit(1)
                 }
                 Spacer(minLength: 3)
-                Text(shortcut).font(.system(size: 11, design: .monospaced)).foregroundStyle(secondary)
-                    .padding(.horizontal, 5).padding(.vertical, 3)
-                    .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 4))
+                Text(shortcut).font(.system(size: 10.5, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.primary.opacity(0.85))
+                    .padding(.horizontal, 6).padding(.vertical, 3)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 5)
+                            .strokeBorder(Color.primary.opacity(0.12), lineWidth: 0.5)
+                    )
             }
             .padding(.horizontal, 9).padding(.vertical, 9).contentShape(Rectangle())
         }

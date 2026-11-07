@@ -19,7 +19,7 @@ final class ReleaseNotesWindowController: NSWindowController, NSWindowDelegate {
             defer: false
         )
         window.title = "更新记录"
-        window.subtitle = "cduyzhShot · \(AppVersion.current.displayString)"
+        window.subtitle = "iScreenshot · \(AppVersion.current.displayString)"
         window.titlebarAppearsTransparent = true
         window.toolbarStyle = .unified
         window.backgroundColor = .windowBackgroundColor
@@ -39,7 +39,6 @@ final class ReleaseNotesWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func show() {
-        NSApp.setActivationPolicy(.regular)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
         if let release = AppVersion.current.releaseRecord {
@@ -55,10 +54,9 @@ final class ReleaseNotesWindowController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        let hasOtherWindow = NSApp.windows.contains {
-            $0 !== window && $0.isVisible && $0.styleMask.contains(.titled)
+        DispatchQueue.main.async {
+            AppState.shared.registerAllHotkeys()
         }
-        if !hasOtherWindow { NSApp.setActivationPolicy(.accessory) }
     }
 }
 
@@ -77,7 +75,7 @@ private struct ReleaseNotesView: View {
                     .background(Color.accentColor.opacity(0.09), in: RoundedRectangle(cornerRadius: 15))
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("cduyzhShot")
+                    Text("iScreenshot")
                         .font(.system(size: 22, weight: .semibold))
                     Text("当前安装 \(current.displayString)")
                         .font(.system(size: 12))
@@ -169,7 +167,7 @@ private struct ReleaseNotesCard: View {
                     }
                     Spacer(minLength: 4)
                 }
-                Text("\(release.dateDisplayString) · 构建 \(release.build)")
+                Text(release.dateDisplayString)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

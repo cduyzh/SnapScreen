@@ -4,6 +4,10 @@ import AppKit
 enum ScrollCaptureOutput {
     static func deliver(_ image: CGImage) {
         let prefs = UserPreferences.shared
+        // 完全免费：默认纯净长截图，无官方品牌水印
+        let shouldWatermark = !prefs.removeScrollWatermark
+        let finalImage = shouldWatermark ? WatermarkRenderer.appendWatermark(to: image) : image
+
         let directory = prefs.saveDirectoryURL
         let copy = prefs.autoCopyToClipboard
         let copyAsFile = prefs.copyAsTempFileToClipboard
@@ -12,12 +16,12 @@ enum ScrollCaptureOutput {
         let file = directory.appendingPathComponent("cduyzhShot_Scroll_\(formatter.string(from: Date()))_\(UUID().uuidString.prefix(4)).png")
         DispatchQueue.global(qos: .userInitiated).async {
             let write: Result<Void, Error> = Result {
-                guard let data = NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]) else {
+                guard let data = NSBitmapImageRep(cgImage: finalImage).representation(using: .png, properties: [:]) else {
                     throw CocoaError(.fileWriteUnknown)
                 }
                 try data.write(to: file, options: .atomic)
             }
-            let clipboard = copy ? PasteboardHelper.prepareImage(image, alsoAsFile: copyAsFile) : nil
+            let clipboard = copy ? PasteboardHelper.prepareImage(finalImage, alsoAsFile: copyAsFile) : nil
             DispatchQueue.main.async {
                 let copied = clipboard.map { PasteboardHelper.publish($0) } ?? false
                 var saved: URL?
@@ -32,7 +36,7 @@ enum ScrollCaptureOutput {
                     alert.runModal()
                 }
                 SoundManager.shared.playCameraShutterSound()
-                FloatingThumbnailWindow.shared.show(image: image, fileURL: saved,
+                FloatingThumbnailWindow.shared.show(image: finalImage, fileURL: saved,
                     message: copied ? "长截图已复制，可直接 ⌘V 粘贴" : (saved != nil ? "长截图已保存" : "长截图保存失败"))
             }
         }

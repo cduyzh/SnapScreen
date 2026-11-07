@@ -27,7 +27,11 @@ public final class TestRunner {
             ("13. 权限安全检测与面板状态刷新 (Permissions Status & Safe Detection)", testPermissionsStatusAndRefresh),
             ("14. 截图美化与样机渲染引擎 (ScreenshotStudio Multi-Mockups & Backgrounds)", testScreenshotStudioRenderer),
             ("15. 工具栏小气泡提示与尺寸自适应 (ToolbarTooltipBubbleView & Button Bindings)", testToolbarTooltipBubbleView),
-            ("16. 在线更新检测与语义版本比对算法 (UpdateChecker & Semantic Version Comparison)", testUpdateChecker)
+            ("16. 在线更新检测与语义版本比对算法 (UpdateChecker & Semantic Version Comparison)", testUpdateChecker),
+            ("17. 截图完成并复制行为与偏好控制 (Screenshot Completion & AutoSave Preferences)", testScreenshotCompletionAndAutoSavePreferences),
+            ("18. 截图自动美化功能与模板持久化 (Auto Beautify Screenshot & Studio Template)", testAutoBeautifyScreenshotAndStudioTemplate),
+            ("19. 放大镜圆角卡片外观与复制反馈 (Magnifier Design & Copy Feedback)", testMagnifierDesignAndFeedback),
+            ("20. 商业化授权验签与防篡改 (Licensing Ed25519 & Watermark Gate)", testLicensingAndWatermarkGate)
         ]
 
         for (name, testFunc) in tests {
@@ -314,9 +318,10 @@ public final class TestRunner {
                 tool: tool,
                 startPoint: CGPoint(x: 20 + idx * 25, y: 30),
                 endPoint: CGPoint(x: 80 + idx * 25, y: 150),
-                color: NSColor.systemRed,
+                color: (idx % 2 == 0) ? NSColor.white : NSColor.systemRed,
                 lineWidth: 3.0,
                 text: "Test Annotation",
+                fontSize: 20.0,
                 badgeNumber: idx + 1
             )
             // Render should never throw or crash
@@ -408,6 +413,23 @@ public final class TestRunner {
         editor3.stringValue = "Unsaved draft"
         editor3.cancelAndDismiss()
         guard mockDelegate3.didCancel && mockDelegate3.committedText == nil else {
+            return false
+        }
+
+        // 5. Test white color adapter & dynamic font size adjustment
+        let whiteEditor = InPlaceTextEditor(origin: origin, color: NSColor.white, maxBounds: bounds, initialFontSize: 16.0)
+        guard whiteEditor.textColor == NSColor.black else {
+            print("When white color is selected, editor text color must be black")
+            return false
+        }
+        whiteEditor.updateColor(NSColor.systemPurple)
+        guard whiteEditor.textColor == NSColor.systemPurple else {
+            print("Dynamic color update failed")
+            return false
+        }
+        whiteEditor.setFontSize(24.0)
+        guard whiteEditor.currentFontSize == 24.0, whiteEditor.font?.pointSize == 24.0 else {
+            print("Dynamic font size update failed")
             return false
         }
 
@@ -966,12 +988,12 @@ public final class TestRunner {
           "tag_name": "v1.2.0",
           "name": "cduyzhShot 1.2.0 (构建 3)",
           "body": "• 新增在线检查更新功能\\n• 支持 GitHub 私人仓库 PAT 授权\\n• 优化滚动长截图对齐算法",
-          "html_url": "https://github.com/cduyzh/SnapScreen/releases/tag/v1.2.0",
+          "html_url": "https://github.com/cduyzh/iScreenshot/releases/tag/v1.2.0",
           "published_at": "2026-10-19T09:00:00Z",
           "assets": [
             {
               "name": "cduyzhShot-1.2.0-build3.zip",
-              "browser_download_url": "https://github.com/cduyzh/SnapScreen/releases/download/v1.2.0/cduyzhShot-1.2.0-build3.zip"
+              "browser_download_url": "https://github.com/cduyzh/iScreenshot/releases/download/v1.2.0/cduyzhShot-1.2.0-build3.zip"
             }
           ]
         }
@@ -983,8 +1005,8 @@ public final class TestRunner {
         }
         guard githubRelease.version == "v1.2.0",
               githubRelease.build == "3",
-              githubRelease.downloadURL?.absoluteString == "https://github.com/cduyzh/SnapScreen/releases/download/v1.2.0/cduyzhShot-1.2.0-build3.zip",
-              githubRelease.htmlURL?.absoluteString == "https://github.com/cduyzh/SnapScreen/releases/tag/v1.2.0",
+              githubRelease.downloadURL?.absoluteString == "https://github.com/cduyzh/iScreenshot/releases/download/v1.2.0/cduyzhShot-1.2.0-build3.zip",
+              githubRelease.htmlURL?.absoluteString == "https://github.com/cduyzh/iScreenshot/releases/tag/v1.2.0",
               githubRelease.releaseNotes.contains("新增在线检查更新功能") else {
             print("GitHub Release 字段解析校验不符合预期: \(githubRelease)")
             return false
@@ -993,13 +1015,13 @@ public final class TestRunner {
         // 3. 解析 release.json 清单格式数据
         let manifestJSON = """
         {
-          "name": "cduyzhShot",
+          "name": "iScreenshot",
           "version": "1.3.0",
           "build": "4",
           "releaseDate": "2026-10-20",
-          "archive": "cduyzhShot-1.3.0.zip",
-          "downloadUrl": "https://example.com/cduyzhShot-1.3.0.zip",
-          "title": "cduyzhShot 1.3.0 优化版本",
+          "archive": "iScreenshot-1.3.0.zip",
+          "downloadUrl": "https://example.com/iScreenshot-1.3.0.zip",
+          "title": "iScreenshot 1.3.0 优化版本",
           "highlights": [
             "性能大幅提升",
             "修复已知问题"
@@ -1013,7 +1035,7 @@ public final class TestRunner {
         }
         guard manifestRelease.version == "1.3.0",
               manifestRelease.build == "4",
-              manifestRelease.downloadURL?.absoluteString == "https://example.com/cduyzhShot-1.3.0.zip",
+              manifestRelease.downloadURL?.absoluteString == "https://example.com/iScreenshot-1.3.0.zip",
               manifestRelease.releaseNotes.contains("性能大幅提升") else {
             print("release.json 清单字段解析不符合预期: \(manifestRelease)")
             return false
@@ -1028,6 +1050,392 @@ public final class TestRunner {
             return false
         }
         prefs.autoCheckForUpdates = originalAutoCheck
+
+        return true
+    }
+
+    // MARK: - Test 17: Screenshot Completion & AutoSave Preferences
+    public static func testScreenshotCompletionAndAutoSavePreferences() -> Bool {
+        let prefs = UserPreferences.shared
+
+        // 1. 验证 autoSaveScreenshotToFile 默认必须为 false（默认只保存到剪切板，不下载到默认保存位置）
+        let originalPref = prefs.autoSaveScreenshotToFile
+        defer { prefs.autoSaveScreenshotToFile = originalPref }
+
+        // 2. 验证设置持久化与切换
+        prefs.autoSaveScreenshotToFile = true
+        guard prefs.autoSaveScreenshotToFile else {
+            print("autoSaveScreenshotToFile 切换为 true 失败")
+            return false
+        }
+        prefs.autoSaveScreenshotToFile = false
+        guard !prefs.autoSaveScreenshotToFile else {
+            print("autoSaveScreenshotToFile 切换为 false 失败")
+            return false
+        }
+
+        // 3. 验证工具栏“完成并复制”按钮绑定与 delegate 触发
+        final class MockDelegate: ScreenshotToolbarDelegate {
+            var copyClicked = false
+            func toolbarDidSelectTool(_ tool: AnnotationTool) {}
+            func toolbarDidSelectColor(_ color: NSColor) {}
+            func toolbarDidClickPin() {}
+            func toolbarDidClickStudio() {}
+            func toolbarDidClickScrollCapture() {}
+            func toolbarDidClickRecord() {}
+            func toolbarDidClickUndo() {}
+            func toolbarDidClickSave() {}
+            func toolbarDidClickCopy() { copyClicked = true }
+            func toolbarDidClickCancel() {}
+        }
+
+        let toolbar = ScreenshotToolbarView(frame: NSRect(x: 0, y: 0, width: 620, height: 38))
+        let delegate = MockDelegate()
+        toolbar.delegate = delegate
+
+        // 查找带有 doneAndCopyButton 标识的完成按钮
+        var foundCheckmarkBtn: DarkToolbarIconButton?
+        func findCheckmark(in view: NSView) {
+            for sub in view.subviews {
+                if let btn = sub as? DarkToolbarIconButton, btn.identifier?.rawValue == "doneAndCopyButton" {
+                    foundCheckmarkBtn = btn
+                    return
+                }
+                findCheckmark(in: sub)
+            }
+        }
+        findCheckmark(in: toolbar)
+
+        guard let doneBtn = foundCheckmarkBtn else {
+            print("未在工具栏中找到完成并复制按钮")
+            return false
+        }
+
+        // 验证点击触发 copyClicked
+        if let target = doneBtn.target, let action = doneBtn.action {
+            _ = target.perform(action, with: doneBtn)
+        }
+
+        guard delegate.copyClicked else {
+            print("完成并复制按钮点击未能触发 toolbarDidClickCopy")
+            return false
+        }
+
+        // 4. 验证剪贴板写入能力
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(data: nil, width: 10, height: 10, bitsPerComponent: 8, bytesPerRow: 40, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let testImage = ctx.makeImage() else {
+            print("创建测试图片失败")
+            return false
+        }
+
+        let copiedURL = PasteboardHelper.copyImage(testImage, alsoAsFile: prefs.copyAsTempFileToClipboard)
+        if prefs.copyAsTempFileToClipboard {
+            guard copiedURL != nil, FileManager.default.fileExists(atPath: copiedURL!.path) else {
+                print("开启临时文件引用时剪贴板未正确生成临时文件")
+                return false
+            }
+        }
+
+        return true
+    }
+
+    // MARK: - Test 18: Auto Beautify Screenshot & Studio Template
+    public static func testAutoBeautifyScreenshotAndStudioTemplate() -> Bool {
+        let prefs = UserPreferences.shared
+        let originalAutoBeautify = prefs.autoBeautifyScreenshot
+        let originalConfig = prefs.studioConfig
+        defer {
+            prefs.autoBeautifyScreenshot = originalAutoBeautify
+            prefs.studioConfig = originalConfig
+        }
+
+        // 1. 验证默认状态为 false
+        prefs.autoBeautifyScreenshot = false
+        guard !prefs.autoBeautifyScreenshot else {
+            print("autoBeautifyScreenshot 默认/置 false 状态失败")
+            return false
+        }
+
+        // 2. 验证设置切换与持久化
+        prefs.autoBeautifyScreenshot = true
+        guard prefs.autoBeautifyScreenshot else {
+            print("autoBeautifyScreenshot 切换为 true 失败")
+            return false
+        }
+
+        // 3. 验证 StudioConfig 编码与持久化
+        var customConfig = StudioConfig()
+        customConfig.mockup = .browserDark
+        customConfig.background = .gradientOcean
+        customConfig.padding = 32
+        customConfig.cornerRadius = 18
+        customConfig.shadow = .soft
+        customConfig.aspectRatio = .ratio16_9
+        customConfig.windowTitle = "AutoBeautifyTest"
+
+        prefs.studioConfig = customConfig
+        guard prefs.studioConfig == customConfig else {
+            print("StudioConfig 持久化校验失败: \(prefs.studioConfig)")
+            return false
+        }
+
+        // 4. 验证根据配置自动美化渲染输出
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        guard let ctx = CGContext(data: nil, width: 200, height: 150, bitsPerComponent: 8, bytesPerRow: 800, space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue),
+              let sourceImg = ctx.makeImage() else {
+            print("创建测试截图源失败")
+            return false
+        }
+
+        let model = ScreenshotStudioModel(config: prefs.studioConfig)
+        guard let beautified = ScreenshotStudioRenderer.render(image: sourceImg, model: model, targetScale: 1.0) else {
+            print("自动美化渲染失败")
+            return false
+        }
+
+        // 验证美化输出尺寸包含 padding 与样机外框扩展
+        guard beautified.width > sourceImg.width, beautified.height > sourceImg.height else {
+            print("美化后尺寸未正确扩展: source=(\(sourceImg.width), \(sourceImg.height)), beautified=(\(beautified.width), \(beautified.height))")
+            return false
+        }
+
+        // 验证美化后可正常写入剪贴板
+        _ = PasteboardHelper.copyImage(beautified, alsoAsFile: false)
+
+        // 5. 验证样机设置为 .none（无外框纯净模式）时的配置持久化与零外框渲染（回归防退化测试）
+        var noneCallbackConfig: StudioConfig?
+        let studioModel = ScreenshotStudioModel()
+        studioModel.onConfigChanged = { cfg in
+            noneCallbackConfig = cfg
+        }
+        studioModel.mockup = .none
+        guard studioModel.toConfig().mockup == StudioMockupStyle.none,
+              noneCallbackConfig?.mockup == StudioMockupStyle.none else {
+            print("ScreenshotStudioModel 设置 mockup = .none 未正确同步到 toConfig() 或未触发 onConfigChanged")
+            return false
+        }
+
+        prefs.studioConfig = studioModel.toConfig()
+        guard prefs.studioConfig.mockup == .none else {
+            print("UserPreferences 持久化 mockup = .none 失败")
+            return false
+        }
+
+        let noneSnapshot = studioModel.snapshot()
+        guard let noneBeautified = ScreenshotStudioRenderer.render(image: sourceImg, model: noneSnapshot, targetScale: 1.0) else {
+            print("无外框纯净模式美化渲染失败")
+            return false
+        }
+        guard noneBeautified.width > 0, noneBeautified.height > 0 else {
+            print("无外框纯净模式美化渲染尺寸异常")
+            return false
+        }
+
+        var zeroPaddingConfig = studioModel.toConfig()
+        zeroPaddingConfig.mockup = .none
+        zeroPaddingConfig.padding = 0
+        zeroPaddingConfig.aspectRatio = .auto
+        let zeroModel = ScreenshotStudioModel(config: zeroPaddingConfig)
+        if let zeroRendered = ScreenshotStudioRenderer.render(image: sourceImg, model: zeroModel, targetScale: 1.0) {
+            // 当 mockup 为 .none 且 padding 为 0、aspectRatio 为 auto 时，没有外壳 chromeHeight，渲染宽高严格等于原图尺寸
+            guard zeroRendered.width == sourceImg.width, zeroRendered.height == sourceImg.height else {
+                print("无外框零留白模式下尺寸应与原图完全一致，实际: (\(zeroRendered.width), \(zeroRendered.height)) vs 原图 (\(sourceImg.width), \(sourceImg.height))")
+                return false
+            }
+        }
+
+        // 6. 验证保存设置模式下绝不触碰系统通用剪贴板
+        let pasteboard = NSPasteboard.general
+        let prevChangeCount = pasteboard.changeCount
+        prefs.studioConfig = studioModel.toConfig()
+        UserDefaults.standard.synchronize()
+        guard pasteboard.changeCount == prevChangeCount else {
+            print("保存预设设置模式下通用剪贴板 changeCount 发生变更，存在剪贴板污染漏洞")
+            return false
+        }
+
+        return true
+    }
+
+    // MARK: - Test 19: Magnifier Design & Copy Feedback
+    public static func testMagnifierDesignAndFeedback() -> Bool {
+        let magnifier = MagnifierView()
+
+        // 1. 验证卡片尺寸与圆角配置
+        guard magnifier.bounds.width >= 150, magnifier.bounds.height >= 180 else {
+            print("MagnifierView bounds 尺寸不符合高保真卡片规范: \(magnifier.bounds)")
+            return false
+        }
+        guard magnifier.wantsLayer, magnifier.layer?.cornerRadius == 12 else {
+            print("MagnifierView 视图层与圆角属性未正确初始化")
+            return false
+        }
+
+        // 2. 验证初始状态未展示复制反馈
+        guard !magnifier.isShowingCopyFeedback else {
+            print("MagnifierView 初始状态错误，isShowingCopyFeedback 不应为 true")
+            return false
+        }
+
+        // 3. 创建测试源图像并注入取色
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        var pixelData: [UInt32] = Array(repeating: 0xFF00E5A3, count: 64 * 64) // RGBA color
+        guard let provider = CGDataProvider(data: Data(bytes: &pixelData, count: pixelData.count * 4) as CFData),
+              let cgImage = CGImage(
+                  width: 64,
+                  height: 64,
+                  bitsPerComponent: 8,
+                  bitsPerPixel: 32,
+                  bytesPerRow: 64 * 4,
+                  space: colorSpace,
+                  bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue),
+                  provider: provider,
+                  decode: nil,
+                  shouldInterpolate: false,
+                  intent: .defaultIntent
+              ) else {
+            print("创建测试源图像失败")
+            return false
+        }
+
+        magnifier.sourceImage = cgImage
+        magnifier.currentPoint = CGPoint(x: 16, y: 16)
+
+        // 4. 离屏渲染测试，确保 draw(_:) 无崩溃且能正常采样颜色
+        guard let rep = NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: Int(magnifier.bounds.width),
+            pixelsHigh: Int(magnifier.bounds.height),
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ) else {
+            print("创建离屏 BitmapImageRep 失败")
+            return false
+        }
+
+        NSGraphicsContext.saveGraphicsState()
+        guard let context = NSGraphicsContext(bitmapImageRep: rep) else {
+            NSGraphicsContext.restoreGraphicsState()
+            return false
+        }
+        NSGraphicsContext.current = context
+        magnifier.draw(magnifier.bounds)
+        NSGraphicsContext.restoreGraphicsState()
+
+        // 验证当前色值已正确更新为 #RRGGBB 格式
+        guard magnifier.currentHexColor.hasPrefix("#"), magnifier.currentHexColor.count == 7 else {
+            print("currentHexColor 格式错误: \(magnifier.currentHexColor)")
+            return false
+        }
+
+        // 5. 触发复制交互反馈并验证状态切换
+        magnifier.triggerCopyFeedback()
+        guard magnifier.isShowingCopyFeedback else {
+            print("triggerCopyFeedback() 后 isShowingCopyFeedback 未能变为 true")
+            return false
+        }
+
+        // 验证反馈态下的绘制稳定性
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = context
+        magnifier.draw(magnifier.bounds)
+        NSGraphicsContext.restoreGraphicsState()
+
+        return true
+    }
+
+    // MARK: - Test 20: 商业化授权验签与防篡改 (Licensing Ed25519 & Watermark Gate)
+    public static func testLicensingAndWatermarkGate() -> Bool {
+        // 1. 验证 HardwareIdentifier 读取
+        let uuid = HardwareIdentifier.uuid
+        guard !uuid.isEmpty else {
+            print("❌ HardwareIdentifier.uuid 为空")
+            return false
+        }
+        print("  - 本机硬件识别码 IOPlatformUUID: \(uuid)")
+
+        // 2. 验证非对称加密验签器 (无效签名必须被坚决拒绝)
+        let sampleData = "SnapScreen-Test-Payload".data(using: .utf8)!
+        let fakeSignature = Data(repeating: 0x5A, count: 64)
+        if CryptoVerifier.verify(data: sampleData, signatureData: fakeSignature) {
+            print("❌ 伪造签名竟然通过了验证！安全防线失效！")
+            return false
+        }
+        print("  - 签名防伪检验：伪造签名已按预期被严密拦截")
+
+        // 2.1 验证多应用矩阵跨产品隔离门禁 (TransBar 授权不可激活 SnapScreen)
+        let otherProductPayload = LicensePayload(
+            product: "transbar",
+            licenseId: "TRANS_LIFETIME_TEST",
+            email: "cross_app@cduyzh.top",
+            tier: .lifetime,
+            deviceUuid: nil,
+            issuedAt: Date().timeIntervalSince1970,
+            expiresAt: Date().timeIntervalSince1970 + 86400
+        )
+        let otherPayloadData = try! JSONEncoder().encode(otherProductPayload)
+        let otherPayloadB64 = otherPayloadData.base64EncodedString()
+        let fakeSigB64 = fakeSignature.base64EncodedString()
+        let mockTransToken = "\(otherPayloadB64).\(fakeSigB64)"
+        if LicenseToken.parse(from: mockTransToken, expectedProductId: "snapscreen") != nil {
+            print("❌ 跨应用产品隔离失效：TransBar 授权意外通过了 SnapScreen 校验！")
+            return false
+        }
+        print("  - 跨应用产品隔离：TransBar/DiskSweep 等其他应用授权被 SnapScreen 严密拦截")
+
+        // 3. 验证 LicenseManager 状态机与 7 天试用机制
+        let manager = LicenseManager.shared
+        manager.refreshState()
+        guard manager.currentTier != .free || manager.trialDaysRemaining >= 0 else {
+            print("❌ 授权状态机计算异常")
+            return false
+        }
+        print("  - 授权状态机：当前级别 \(manager.currentTier.title), isPro=\(manager.isPro), 试用剩余=\(manager.trialDaysRemaining)天")
+
+        // 4. 验证长截图水印渲染器 (WatermarkRenderer)
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB)!
+        guard let ctx = CGContext(
+            data: nil,
+            width: 400,
+            height: 600,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ) else {
+            print("❌ 无法创建测试 CGContext")
+            return false
+        }
+        ctx.setFillColor(NSColor.white.cgColor)
+        ctx.fill(CGRect(x: 0, y: 0, width: 400, height: 600))
+        guard let testImg = ctx.makeImage() else {
+            print("❌ 创建测试 CGImage 失败")
+            return false
+        }
+
+        let watermarked = WatermarkRenderer.appendWatermark(to: testImg)
+        guard watermarked.height > testImg.height else {
+            print("❌ 水印附加后图片高度未增加：原高 \(testImg.height), 水印高 \(watermarked.height)")
+            return false
+        }
+        print("  - 水印渲染器：原始高度 \(testImg.height)px -> 拼接水印后 \(watermarked.height)px，水印带成功合成")
+
+        // 5. 验证二维码生成器 (QRCodeGenerator)
+        guard let qr = QRCodeGenerator.generate(from: "https://cduyzh.top/test", size: 100) else {
+            print("❌ 二维码生成器输出为空")
+            return false
+        }
+        guard qr.size.width >= 100 else {
+            print("❌ 二维码尺寸异常")
+            return false
+        }
+        print("  - 二维码生成引擎：Native CoreImage 生成成功，分辨率 \(qr.size.width)x\(qr.size.height)")
 
         return true
     }

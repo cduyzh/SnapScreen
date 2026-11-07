@@ -1,6 +1,11 @@
 import AppKit
 import CoreGraphics
 
+private final class ScreenshotOverlayPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { true }
+}
+
 public final class ScreenshotOverlayController: NSObject, ScreenshotOverlayDelegate {
     public static let shared = ScreenshotOverlayController()
 
@@ -19,7 +24,21 @@ public final class ScreenshotOverlayController: NSObject, ScreenshotOverlayDeleg
     }
 
     public func startCapture(scrollModeDirect: Bool = false) {
-        guard !isCapturing else { return }
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { self.startCapture(scrollModeDirect: scrollModeDirect) }
+            return
+        }
+
+        if isCapturing {
+            // 自愈保护：如果标记为 capturing，但所有面板已不存在或不可见，重置状态
+            let hasVisiblePanel = panels.contains(where: { $0.isVisible })
+            if !hasVisiblePanel {
+                dismiss()
+            } else {
+                return
+            }
+        }
+
         // Clean up any lingering scroll capture state or rogue windows
         if ScrollCaptureManager.shared.isRunning {
             ScrollCaptureManager.shared.cancel()
@@ -45,9 +64,9 @@ public final class ScreenshotOverlayController: NSObject, ScreenshotOverlayDeleg
         let currentMouseScreen = DisplayHelper.screenContaining(point: NSEvent.mouseLocation) ?? NSScreen.main
 
         for (screen, image) in screenImages {
-            let panel = NSPanel(
+            let panel = ScreenshotOverlayPanel(
                 contentRect: screen.frame,
-                styleMask: [.nonactivatingPanel, .borderless],
+                styleMask: [.borderless],
                 backing: .buffered,
                 defer: false
             )
@@ -70,25 +89,51 @@ public final class ScreenshotOverlayController: NSObject, ScreenshotOverlayDeleg
 
             panel.orderFrontRegardless()
             if screen == currentMouseScreen {
-                panel.makeKey()
+                panel.makeKeyAndOrderFront(nil)
             }
         }
 
         NSApp.activate(ignoringOtherApps: true)
 
-        // 3. Register cascading Esc monitors across all apps and screens (undo -> cancel)
+        // 3. Register cascading shortcut monitors across all apps and screens
         removeEscMonitors()
         localEscMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self = self else { return event }
+            let mouseLocation = NSEvent.mouseLocation
+            let targetView = self.overlayViews.first(where: { $0.hasActiveSelection })
+                ?? self.overlayViews.first(where: { $0.window?.frame.contains(mouseLocation) == true })
+                ?? self.overlayViews.first
+
+            guard let view = targetView else { return event }
+
             if event.keyCode == 53 { // Esc
-                guard let self = self else { return nil }
-                let mouseLocation = NSEvent.mouseLocation
-                let targetView = self.overlayViews.first(where: { $0.window?.frame.contains(mouseLocation) == true }) ?? self.overlayViews.first
-                if let view = targetView, view.handleEscape() {
-                    return nil // Consumed by undoing annotation or draft
+                if view.handleEscape() {
+                    return nil
                 }
                 self.overlayDidCancel()
                 return nil
             }
+
+            if event.keyCode == 36 { // Enter / Return
+                view.toolbarDidClickCopy()
+                return nil
+            }
+
+            if event.keyCode == 1 && event.modifierFlags.contains(.command) { // Cmd+S
+                view.toolbarDidClickSave()
+                return nil
+            }
+
+            if event.keyCode == 35 && event.modifierFlags.contains(.option) { // Opt+P
+                view.toolbarDidClickPin()
+                return nil
+            }
+
+            if event.keyCode == 6 && event.modifierFlags.contains(.command) { // Cmd+Z
+                view.toolbarDidClickUndo()
+                return nil
+            }
+
             return event
         }
         globalEscMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -125,6 +170,11 @@ public final class ScreenshotOverlayController: NSObject, ScreenshotOverlayDeleg
         panels.removeAll()
         overlayViews.removeAll()
         isCapturing = false
+
+        // 每次截屏关闭/退出后，确保全局热键处于就绪活跃状态
+        DispatchQueue.main.async {
+            AppState.shared.registerAllHotkeys()
+        }
     }
 
     // MARK: - ScreenshotOverlayDelegate

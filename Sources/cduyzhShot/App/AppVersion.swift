@@ -2,6 +2,7 @@ import Foundation
 
 /// 版本与构建信息以当前运行的应用包为准。
 struct AppVersion: Equatable {
+    static let appName = "iScreenshot"
     let version: String
     let build: String
     let buildDate: Date?
@@ -23,7 +24,8 @@ struct AppVersion: Equatable {
         )
     }()
 
-    var displayString: String { "\(version) (\(build))" }
+    var displayString: String { "v\(version)" }
+    var fullDisplayString: String { "v\(version)" }
 
     var releaseRecord: AppRelease? {
         ReleaseHistory.shared.releases.first { $0.version == version && $0.build == build }
@@ -69,18 +71,31 @@ struct AppRelease: Decodable, Identifiable {
     let notes: [String]
 
     var id: String { "\(version)|\(build)" }
-    var displayString: String { "\(version) (\(build))" }
+    var displayString: String { "v\(version)" }
+    var fullDisplayString: String { "v\(version)" }
     var dateDisplayString: String { Self.formattedDate(date) ?? date }
 
     private enum CodingKeys: String, CodingKey {
-        case version, build, date, title, summary, highlights, notes
+        case version, build, date, releaseDate, title, summary, highlights, notes
     }
 
     init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         version = try values.decode(String.self, forKey: .version)
-        build = try values.decode(String.self, forKey: .build)
-        date = try values.decode(String.self, forKey: .date)
+        if let b = try? values.decode(String.self, forKey: .build) {
+            build = b
+        } else if let bInt = try? values.decode(Int.self, forKey: .build) {
+            build = String(bInt)
+        } else {
+            build = "1"
+        }
+        if let d = try? values.decode(String.self, forKey: .date) {
+            date = d
+        } else if let rd = try? values.decode(String.self, forKey: .releaseDate) {
+            date = rd
+        } else {
+            date = ""
+        }
         title = try values.decode(String.self, forKey: .title)
         summary = try values.decode(String.self, forKey: .summary)
         highlights = try values.decodeIfPresent([String].self, forKey: .highlights) ?? []

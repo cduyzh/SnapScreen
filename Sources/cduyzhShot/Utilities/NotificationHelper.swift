@@ -28,6 +28,14 @@ public final class NotificationHelper: NSObject, UNUserNotificationCenterDelegat
         )
     }
 
+    public static func notifyColorCopied(hex: String) {
+        shared.postNotification(
+            title: "颜色已复制",
+            body: "已将色值 \(hex) 复制到剪切板",
+            fileURL: URL(string: "color://\(hex)")!
+        )
+    }
+
     private func postNotification(title: String, body: String, fileURL: URL) {
         guard Bundle.main.bundleIdentifier != nil, Bundle.main.object(forInfoDictionaryKey: "cduyzhUIPreview") as? Bool != true else { return }
         let content = UNMutableNotificationContent()

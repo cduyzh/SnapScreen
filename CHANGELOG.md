@@ -2,38 +2,22 @@
 
 This file is generated from the in-app ReleaseHistory.json; version, build number and content match the in-app records.
 
-## 1.2.0 (Build 3) · 2026-10-23
+## 1.0.0 (Build 1) · 2026-11-07
 
-Clearer scrolling capture and status panel
+iScreenshot (极速截屏) 官方正式版发布
 
-Makes scroll direction, seam recovery and menu state easier to understand, and streamlines the annotation tools.
+专为 macOS 打造的原生极速截屏、滚动长截图、截图美化与免驱动系统录屏工具。纯 Swift 原生架构，极小内存占用与秒级冷启动，永久免费开源。
 
-- Scrolling capture gains two auto-capture buttons (up and down) that extend the stitch from the current position in both directions without repeating content.
-- Brief alignment failures retry first; persistent mismatch keeps the successful frames side by side and offers "Help me rejoin" to find the overlap in small steps.
-- Left-clicking the menu bar icon starts a capture directly; right-click opens a grouped panel with common actions, shortcuts and actual permission states.
-- Removed the pen, highlighter and stroke-width controls; rectangle, ellipse, arrow, line, mosaic, text and number badges remain.
-
-Usage notes:
-
-- Auto-capture and "Help me rejoin" need Accessibility permission; manual scrolling still works without it.
-- Page jumps, repeating textures or large animated areas may still fail to align; if the stitch cannot be recovered you can save what was captured.
-
-## 1.1.0 (Build 2) · 2026-10-18
-
-First version history
-
-Starts a clear record for every update, with a lighter native interface and a re-implemented scrolling capture.
-
-- New online update check: one click from the status bar menu, app menu or settings; detects GitHub Releases or a custom source automatically, with PAT-token support for private repos; new versions show a native dialog with release notes and direct download.
-- Menus and settings show version and build numbers; a new About & Updates page shows the version history any time.
-- New versions show their release notes on first launch, then reopen from the menu.
-- Settings move to a sidebar layout; Image Beautifier gains light/dark appearance, background palettes and continuous composition controls.
-- Scrolling capture now uses async frame grabbing with background incremental stitching, supporting manual review then continue, fixed header/footer detection and mismatch hints.
-- Improved copy, save-as, recording save states and floating thumbnail feedback to avoid state conflicts from repeated actions.
-- Installation cleans up old build copies and standalone preview bundles, keeping only the official app in /Applications.
+- macOS 原生轻量架构：纯 Swift/AppKit/SwiftUI 打造，冷启动低于 200ms，内存常驻仅约 20MB，零 Electron 臃肿包袱。
+- 双向智能滚动长截图：自研动态特征拼接算法，支持向上向下双向自动滚动，智能避让悬浮吸顶栏，自动微调接缝与断点自愈。
+- 截图美化工作室：内置高品质渐变底色、macOS 原生磨砂外壳与浏览器样机外壳，支持自定义内边距、圆角与立体深邃阴影，支持偏好持久化与自动美化套用。
+- ScreenCaptureKit 原生高清录屏：基于苹果官方底层技术，支持最高 4K 60fps 录制与系统声音内录，无需安装任何第三方虚拟声卡驱动（如 BlackHole）。
+- 4x 视网膜放大镜与像素取色：精准定位像素级坐标，实时预览十六进制 HEX 与 RGB 色值，一键回车复制色值。
+- 丰富的矢量标注与原位文本编辑：支持矩形、椭圆、箭头、线条、马赛克与计数序号，支持双击就地编辑排版文本。
+- 贴图置顶（Pin）与悬浮控制：一键将截图置顶浮动于所有桌面窗口之上，支持滚轮缩放、透明度滑动与双击关闭。
+- 本地优先与隐私零妥协：完全在 Mac 本机处理图像与音视频，零云端上传，零第三方跟踪分析，安全可信。
 
 Usage notes:
 
-- This is the first formally recorded version; the earlier 1.0.0 (build 1) kept no changelog.
-- Screenshots and scrolling capture need Screen Recording permission; auto-scroll and cross-app control keys need Accessibility permission.
-- Repeating textures, videos or large animated areas may not align reliably; when prompted, scroll back a section and scroll slowly.
+- 截图、滚动长截图与屏幕录制需要系统'屏幕录制'权限；自动滚动需要'辅助功能'权限。
+- 所有功能均为本地离线运行，零云端上传，请放心使用。

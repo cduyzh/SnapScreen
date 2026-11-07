@@ -87,7 +87,7 @@ public enum UpdateCheckState: Equatable {
 public final class UpdateManager: ObservableObject {
     public static let shared = UpdateManager()
 
-    public static let defaultGitHubEndpoint = "https://api.github.com/repos/cduyzh/SnapScreen/releases/latest"
+    public static let defaultGitHubEndpoint = "https://api.github.com/repos/cduyzh/iScreenshot/releases/latest"
 
     @Published public private(set) var checkState: UpdateCheckState = .idle
     @Published public private(set) var latestRelease: RemoteReleaseInfo?

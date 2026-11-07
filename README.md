@@ -1,4 +1,4 @@
-# SnapScreen
+# iScreenshot
 
 A native macOS app for screenshots, scrolling long screenshots, and screen recording with system audio.
 
@@ -9,7 +9,7 @@ A native macOS app for screenshots, scrolling long screenshots, and screen recor
 
 **English** · [简体中文](README.zh-CN.md)
 
-**SnapScreen** is a modern, lightweight, native menu-bar app that covers the whole screenshot workflow on macOS: region capture with annotation, scrolling long screenshots, pin-to-screen images, an image beautification studio, and screen recording with system audio. It is built with Swift 6, AppKit, SwiftUI, and ScreenCaptureKit, and ships with zero third-party closed-source dependencies.
+**iScreenshot** (formerly SnapScreen) is a modern, lightweight, native menu-bar app that covers the whole screenshot workflow on macOS: region capture with annotation, scrolling long screenshots, pin-to-screen images, an image beautification studio, and screen recording with system audio. It is built with Swift 6, AppKit, SwiftUI, and ScreenCaptureKit, and ships with zero third-party closed-source dependencies.
 
 ## Features
 
@@ -59,8 +59,8 @@ A native macOS app for screenshots, scrolling long screenshots, and screen recor
 - **Native settings** — a sidebar-categorized, scrollable settings window that remembers its size and position.
 - **Appearance-aware studio** — the Studio follows the system light/dark appearance with live previews of background swatches, margins, corner radius, and aspect ratio; rapid adjustments coalesce into single render requests so exports never copy a stale preview.
 - **Polished thumbnails** — the post-capture floating thumbnail never steals focus, pauses auto-dismiss while hovered, and stays at least 2 seconds after the cursor leaves.
-- **Update checker** — check for updates from the status menu, the app menu, or Settings; it detects GitHub Releases or a self-hosted feed (with PAT token support for private repositories), and a native dialog shows the release notes with a direct download.
-- **Changelog viewer** — the "Release Notes…" menu and Settings → About & Update show the actually installed version and build time; the first launch of a new version presents its release notes, reopenable from the menu at any time.
+- **Update checker** — check for updates from the status menu, the app menu, or Settings; it detects the latest GitHub Releases, and a native dialog shows the release notes with a direct download.
+- **Changelog viewer** — the "Release Notes…" menu and Settings → About show the actually installed version and release date; the first launch of a new version presents its release notes, reopenable from the menu at any time.
 
 ## Keyboard Shortcuts
 
@@ -80,7 +80,7 @@ A native macOS app for screenshots, scrolling long screenshots, and screen recor
 
 ## Download and Install
 
-1. Download the latest DMG from [GitHub Releases](https://github.com/cduyzh/SnapScreen/releases).
+1. Download the latest DMG from [GitHub Releases](https://github.com/cduyzh/iScreenshot/releases).
 2. Open the DMG and drag the app into your **Applications** folder.
 3. Launch the app. On first use, grant **Screen Recording** permission (System Settings → Privacy & Security); optionally grant **Accessibility** for automatic scrolling in long screenshots, and **Microphone** if you want to record your voice.
 
@@ -89,18 +89,18 @@ A native macOS app for screenshots, scrolling long screenshots, and screen recor
 Requires macOS 14+ and Xcode or the Command Line Tools (Swift 5.9+).
 
 ```bash
-git clone https://github.com/cduyzh/SnapScreen.git
-cd SnapScreen
+git clone https://github.com/cduyzh/iScreenshot.git
+cd iScreenshot
 ./build_app.sh
 ```
 
 ## Version History
 
-Current version: **1.2.0 (Build 3)**, released 2026-10-23. See the full history in [CHANGELOG.md](CHANGELOG.md).
+Current version: **1.0.0 (Build 1)**, released 2026-11-07. See the full history in [CHANGELOG.md](CHANGELOG.md).
 
 ## Privacy
 
-Everything you capture or record stays on your Mac. Copying writes only to the clipboard (plus an optional temporary file); permanent files are written only when you explicitly save. The only network access is the optional update check against GitHub Releases or a feed you configure — no analytics, no telemetry, and zero third-party closed-source dependencies. The app requests only the permissions its features need: Screen Recording (screenshots, long screenshots, recording), Accessibility (automatic scrolling), and optionally Microphone (voice recording).
+Everything you capture or record stays on your Mac. Copying writes only to the clipboard (plus an optional temporary file); permanent files are written only when you explicitly save. The only network access is the optional update check against GitHub Releases — no analytics, no telemetry, and zero third-party closed-source dependencies. The app requests only the permissions its features need: Screen Recording (screenshots, long screenshots, recording), Accessibility (automatic scrolling), and optionally Microphone (voice recording).
 
 ## License
 

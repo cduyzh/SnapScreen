@@ -34,6 +34,8 @@ node_modules/
 *.p12
 *.key
 secrets/
+backend/
+backend.zip
 *credentials*
 *-api-key*
 
@@ -55,3 +57,8 @@ GEMINI.md
 website/
 private/
 local/
+design-demos/
+*-spec.md
+*-approved.md
+product-facts.md
+*交接文案.md

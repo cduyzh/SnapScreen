@@ -2,7 +2,7 @@ import AppKit
 import Foundation
 
 // MARK: - Mockup Style
-public enum StudioMockupStyle: String, CaseIterable, Identifiable {
+public enum StudioMockupStyle: String, CaseIterable, Identifiable, Codable {
     case none = "无外框"
     case macLight = "macOS 浅色"
     case macDark = "macOS 深色"
@@ -23,7 +23,7 @@ public enum StudioMockupStyle: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Background Style
-public enum StudioBackgroundStyle: String, CaseIterable, Identifiable {
+public enum StudioBackgroundStyle: String, CaseIterable, Identifiable, Codable {
     case blur = "智能模糊"
     case gradientSonoma = "晨曦暮光"
     case gradientAurora = "极光夜空"
@@ -50,7 +50,7 @@ public enum StudioBackgroundStyle: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Shadow Style
-public enum StudioShadowStyle: String, CaseIterable, Identifiable {
+public enum StudioShadowStyle: String, CaseIterable, Identifiable, Codable {
     case none = "无"
     case soft = "柔和"
     case deep = "深邃"
@@ -59,7 +59,7 @@ public enum StudioShadowStyle: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Aspect Ratio
-public enum StudioAspectRatio: String, CaseIterable, Identifiable {
+public enum StudioAspectRatio: String, CaseIterable, Identifiable, Codable {
     case auto = "自适应"
     case ratio16_9 = "16:9"
     case ratio4_3 = "4:3"
@@ -81,17 +81,108 @@ public enum StudioAspectRatio: String, CaseIterable, Identifiable {
     }
 }
 
+// MARK: - Studio Config
+public struct StudioConfig: Codable, Equatable {
+    public var mockup: StudioMockupStyle = .macDark
+    public var background: StudioBackgroundStyle = .blur
+    public var padding: CGFloat = 44
+    public var cornerRadius: CGFloat = 14
+    public var shadow: StudioShadowStyle = .deep
+    public var aspectRatio: StudioAspectRatio = .auto
+    public var windowTitle: String = "iScreenshot"
+    public var browserUrl: String = "cduyzh.top"
+
+    public init(
+        mockup: StudioMockupStyle = .macDark,
+        background: StudioBackgroundStyle = .blur,
+        padding: CGFloat = 44,
+        cornerRadius: CGFloat = 14,
+        shadow: StudioShadowStyle = .deep,
+        aspectRatio: StudioAspectRatio = .auto,
+        windowTitle: String = "iScreenshot",
+        browserUrl: String = "cduyzh.top"
+    ) {
+        self.mockup = mockup
+        self.background = background
+        self.padding = padding
+        self.cornerRadius = cornerRadius
+        self.shadow = shadow
+        self.aspectRatio = aspectRatio
+        self.windowTitle = windowTitle
+        self.browserUrl = browserUrl
+    }
+}
+
 // MARK: - Studio State Model
 public final class ScreenshotStudioModel: ObservableObject {
-    @Published public var mockup: StudioMockupStyle = .macDark
-    @Published public var background: StudioBackgroundStyle = .blur
-    @Published public var padding: CGFloat = 44
-    @Published public var cornerRadius: CGFloat = 14
-    @Published public var shadow: StudioShadowStyle = .deep
-    @Published public var aspectRatio: StudioAspectRatio = .auto
-    @Published public var windowTitle: String = "cduyzhShot"
+    private var isApplyingConfig = false
+
+    @Published public var mockup: StudioMockupStyle = .macDark {
+        didSet { notifyChange() }
+    }
+    @Published public var background: StudioBackgroundStyle = .blur {
+        didSet { notifyChange() }
+    }
+    @Published public var padding: CGFloat = 44 {
+        didSet { notifyChange() }
+    }
+    @Published public var cornerRadius: CGFloat = 14 {
+        didSet { notifyChange() }
+    }
+    @Published public var shadow: StudioShadowStyle = .deep {
+        didSet { notifyChange() }
+    }
+    @Published public var aspectRatio: StudioAspectRatio = .auto {
+        didSet { notifyChange() }
+    }
+    @Published public var windowTitle: String = "iScreenshot" {
+        didSet { notifyChange() }
+    }
+    @Published public var browserUrl: String = "cduyzh.top" {
+        didSet { notifyChange() }
+    }
+
+    /// 属性变更完成后的即时回调（传递最新的 StudioConfig）
+    public var onConfigChanged: ((StudioConfig) -> Void)?
 
     public init() {}
+
+    public convenience init(config: StudioConfig) {
+        self.init()
+        apply(config: config)
+    }
+
+    public func toConfig() -> StudioConfig {
+        StudioConfig(
+            mockup: mockup,
+            background: background,
+            padding: padding,
+            cornerRadius: cornerRadius,
+            shadow: shadow,
+            aspectRatio: aspectRatio,
+            windowTitle: windowTitle,
+            browserUrl: browserUrl
+        )
+    }
+
+    public func apply(config: StudioConfig) {
+        isApplyingConfig = true
+        self.mockup = config.mockup
+        self.background = config.background
+        self.padding = config.padding
+        self.cornerRadius = config.cornerRadius
+        self.shadow = config.shadow
+        self.aspectRatio = config.aspectRatio
+        self.windowTitle = config.windowTitle
+        self.browserUrl = config.browserUrl
+        isApplyingConfig = false
+        notifyChange()
+    }
+
+    private func notifyChange() {
+        guard !isApplyingConfig else { return }
+        onConfigChanged?(toConfig())
+    }
 }
 
 extension ScreenshotStudioModel {
@@ -105,6 +196,7 @@ extension ScreenshotStudioModel {
         copy.shadow = shadow
         copy.aspectRatio = aspectRatio
         copy.windowTitle = windowTitle
+        copy.browserUrl = browserUrl
         return copy
     }
 
@@ -115,6 +207,7 @@ extension ScreenshotStudioModel {
         cornerRadius = 14
         shadow = .deep
         aspectRatio = .auto
-        windowTitle = "cduyzhShot"
+        windowTitle = "iScreenshot"
+        browserUrl = "cduyzh.top"
     }
 }

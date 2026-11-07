@@ -61,11 +61,12 @@ final class StatusPanelController: NSObject, NSPopoverDelegate {
     }
 
     func captureFromStatusItem() {
-        // 系统可能先关闭 transient popover，再派发同一按钮的左键动作。
-        let wasActivatedByPanel = previousActiveApp != nil
-            && NSWorkspace.shared.frontmostApplication?.processIdentifier == ProcessInfo.processInfo.processIdentifier
-        if popover.isShown || wasActivatedByPanel { perform(.screenshot) }
-        else { AppState.shared.triggerScreenshot() }
+        if popover.isShown {
+            perform(.screenshot)
+        } else {
+            Self.captureLaunchPending = false
+            AppState.shared.triggerScreenshot()
+        }
     }
 
     func refreshIfVisible() {
@@ -92,8 +93,11 @@ final class StatusPanelController: NSObject, NSPopoverDelegate {
     /// 捕获入口及 Carbon 全局热键共用，防止将仍在显示的状态面板截入图片。
     /// 关闭后 current 已清空，因此延迟调用原入口不会递归。
     static func deferCaptureIfPresented(_ action: @escaping () -> Void) -> Bool {
+        guard let current, current.popover.isShown else {
+            captureLaunchPending = false
+            return false
+        }
         if captureLaunchPending { return true }
-        guard let current, current.popover.isShown else { return false }
         current.afterClosing(restoreTarget: true, action)
         return true
     }

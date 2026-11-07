@@ -21,4 +21,9 @@ public final class SoundManager {
         guard UserPreferences.shared.playCaptureSound else { return }
         NSSound(named: "Pop")?.play()
     }
+
+    public func playColorCopiedSound() {
+        guard UserPreferences.shared.playCaptureSound else { return }
+        NSSound(named: "Tink")?.play()
+    }
 }

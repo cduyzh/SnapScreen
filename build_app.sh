@@ -10,7 +10,7 @@ python3 scripts/release_metadata.py
 echo "===> [1/4] 编译 Release..."
 swift build -c release
 BIN_DIR="$(swift build -c release --show-bin-path)"
-APP_DIR="$PROJECT_DIR/.build.noindex/SnapScreen.app"
+APP_DIR="$PROJECT_DIR/.build.noindex/iScreenshot.app"
 mkdir -p "$PROJECT_DIR/.build.noindex"
 touch "$PROJECT_DIR/.build.noindex/.metadata_never_index"
 

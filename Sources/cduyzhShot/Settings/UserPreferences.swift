@@ -15,12 +15,16 @@ public final class UserPreferences: ObservableObject {
         static let playCaptureSound = "playCaptureSound"
         static let autoCopyToClipboard = "autoCopyToClipboard"
         static let copyAsTempFileToClipboard = "copyAsTempFileToClipboard"
+        static let autoSaveScreenshotToFile = "autoSaveScreenshotToFile"
+        static let autoBeautifyScreenshot = "autoBeautifyScreenshot"
+        static let studioConfig = "studioConfig"
         static let showFloatingThumbnail = "showFloatingThumbnail"
         static let showMagnifier = "showMagnifier"
         static let cacheRetentionDays = "cacheRetentionDays"
         static let maxCacheSizeMB = "maxCacheSizeMB"
         static let autoCleanCacheEnabled = "autoCleanCacheEnabled"
         static let screenshotFormat = "screenshotFormat"
+        static let removeScrollWatermark = "removeScrollWatermark"
         static let recordFPS = "recordFPS"
         static let autoCheckForUpdates = "autoCheckForUpdates"
         static let lastUpdateCheckDate = "lastUpdateCheckDate"
@@ -64,6 +68,18 @@ public final class UserPreferences: ObservableObject {
         didSet { defaults.set(copyAsTempFileToClipboard, forKey: Keys.copyAsTempFileToClipboard) }
     }
 
+    @Published public var autoSaveScreenshotToFile: Bool {
+        didSet { defaults.set(autoSaveScreenshotToFile, forKey: Keys.autoSaveScreenshotToFile) }
+    }
+
+    @Published public var autoBeautifyScreenshot: Bool {
+        didSet { defaults.set(autoBeautifyScreenshot, forKey: Keys.autoBeautifyScreenshot) }
+    }
+
+    @Published public var studioConfig: StudioConfig {
+        didSet { saveStudioConfig(studioConfig) }
+    }
+
     @Published public var showFloatingThumbnail: Bool {
         didSet { defaults.set(showFloatingThumbnail, forKey: Keys.showFloatingThumbnail) }
     }
@@ -86,6 +102,10 @@ public final class UserPreferences: ObservableObject {
 
     @Published public var screenshotFormat: String {
         didSet { defaults.set(screenshotFormat, forKey: Keys.screenshotFormat) }
+    }
+
+    @Published public var removeScrollWatermark: Bool {
+        didSet { defaults.set(removeScrollWatermark, forKey: Keys.removeScrollWatermark) }
     }
 
     @Published public var recordFPS: Int {
@@ -143,12 +163,16 @@ public final class UserPreferences: ObservableObject {
         self.playCaptureSound = defaults.object(forKey: Keys.playCaptureSound) as? Bool ?? true
         self.autoCopyToClipboard = defaults.object(forKey: Keys.autoCopyToClipboard) as? Bool ?? true
         self.copyAsTempFileToClipboard = defaults.object(forKey: Keys.copyAsTempFileToClipboard) as? Bool ?? true
+        self.autoSaveScreenshotToFile = defaults.object(forKey: Keys.autoSaveScreenshotToFile) as? Bool ?? false
+        self.autoBeautifyScreenshot = defaults.object(forKey: Keys.autoBeautifyScreenshot) as? Bool ?? false
+        self.studioConfig = UserPreferences.loadStudioConfig()
         self.showFloatingThumbnail = defaults.object(forKey: Keys.showFloatingThumbnail) as? Bool ?? true
         self.showMagnifier = defaults.object(forKey: Keys.showMagnifier) as? Bool ?? true
         self.cacheRetentionDays = defaults.object(forKey: Keys.cacheRetentionDays) as? Int ?? 7
         self.maxCacheSizeMB = defaults.object(forKey: Keys.maxCacheSizeMB) as? Int ?? 500
         self.autoCleanCacheEnabled = defaults.object(forKey: Keys.autoCleanCacheEnabled) as? Bool ?? true
         self.screenshotFormat = defaults.string(forKey: Keys.screenshotFormat) ?? "PNG"
+        self.removeScrollWatermark = defaults.object(forKey: Keys.removeScrollWatermark) as? Bool ?? false
         self.recordFPS = defaults.object(forKey: Keys.recordFPS) as? Int ?? 60
         self.autoCheckForUpdates = defaults.object(forKey: Keys.autoCheckForUpdates) as? Bool ?? true
         self.lastUpdateCheckDate = defaults.object(forKey: Keys.lastUpdateCheckDate) as? Date
@@ -165,5 +189,19 @@ public final class UserPreferences: ObservableObject {
     private static func loadKeyCombo(key: String) -> KeyCombo? {
         guard let data = UserDefaults.standard.data(forKey: key) else { return nil }
         return try? JSONDecoder().decode(KeyCombo.self, from: data)
+    }
+
+    private func saveStudioConfig(_ config: StudioConfig) {
+        if let data = try? JSONEncoder().encode(config) {
+            defaults.set(data, forKey: Keys.studioConfig)
+        }
+    }
+
+    private static func loadStudioConfig() -> StudioConfig {
+        guard let data = UserDefaults.standard.data(forKey: Keys.studioConfig),
+              let config = try? JSONDecoder().decode(StudioConfig.self, from: data) else {
+            return StudioConfig()
+        }
+        return config
     }
 }

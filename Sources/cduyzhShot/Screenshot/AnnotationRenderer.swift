@@ -119,38 +119,32 @@ public final class AnnotationRenderer {
         context.fillPath()
     }
 
+    public static func isWhiteColor(_ color: NSColor) -> Bool {
+        guard let rgb = color.usingColorSpace(.deviceRGB) else { return false }
+        return rgb.redComponent > 0.88 && rgb.greenComponent > 0.88 && rgb.blueComponent > 0.88
+    }
+
     private static func renderText(item: AnnotationItem, in context: CGContext) {
         guard !item.text.isEmpty else { return }
         let text = item.text as NSString
         let font = NSFont.systemFont(ofSize: item.fontSize, weight: .bold)
 
+        let isWhite = isWhiteColor(item.color)
+        let displayTextColor = isWhite ? NSColor.black : item.color
+
+        // 柔和微光文字阴影，保证去除背景框后在任意底图上都清晰可见
+        let shadow = NSShadow()
+        shadow.shadowBlurRadius = 2.0
+        shadow.shadowOffset = CGSize(width: 0, height: -1)
+        shadow.shadowColor = isWhite ? NSColor.white.withAlphaComponent(0.85) : NSColor.black.withAlphaComponent(0.65)
+
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: item.color
+            .foregroundColor: displayTextColor,
+            .shadow: shadow
         ]
 
-        let size = text.size(withAttributes: attributes)
-        let padding: CGFloat = 6.0
-        let bgRect = CGRect(
-            x: item.startPoint.x - padding,
-            y: item.startPoint.y - padding,
-            width: size.width + padding * 2,
-            height: size.height + padding * 2
-        )
-
-        // Draw translucent dark background pill
-        let bgPath = CGPath(roundedRect: bgRect, cornerWidth: 5, cornerHeight: 5, transform: nil)
-        context.addPath(bgPath)
-        context.setFillColor(NSColor(white: 0.12, alpha: 0.85).cgColor)
-        context.fillPath()
-
-        // Border around text pill
-        context.addPath(bgPath)
-        context.setStrokeColor(NSColor(white: 0.35, alpha: 0.5).cgColor)
-        context.setLineWidth(1.0)
-        context.strokePath()
-
-        // Render text via NSGraphicsContext with flipped: true (matching overlay coordinate system)
+        // 直接在画布上绘制文字，彻底移除深色背景胶囊框与外描边
         NSGraphicsContext.saveGraphicsState()
         let nsContext = NSGraphicsContext(cgContext: context, flipped: true)
         NSGraphicsContext.current = nsContext
@@ -163,6 +157,8 @@ public final class AnnotationRenderer {
         let center = item.startPoint
         let rect = CGRect(x: center.x - radius, y: center.y - radius, width: radius * 2, height: radius * 2)
 
+        let isWhite = isWhiteColor(item.color)
+
         // Badge circle with shadow
         context.saveGState()
         context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 3, color: NSColor.black.withAlphaComponent(0.45).cgColor)
@@ -170,19 +166,20 @@ public final class AnnotationRenderer {
         context.fillEllipse(in: rect)
         context.restoreGState()
 
-        // White border
+        // Border: 白色底座时采用有辨识度的灰白边框，其它底座采用纯白外圈
         context.saveGState()
-        context.setStrokeColor(NSColor.white.cgColor)
+        context.setStrokeColor(isWhite ? NSColor(white: 0.65, alpha: 0.9).cgColor : NSColor.white.cgColor)
         context.setLineWidth(2.0)
         context.strokeEllipse(in: rect)
         context.restoreGState()
 
-        // Badge number string (drawn upright via flipped: true)
+        // Badge number string (选中白色标注时字体为黑色，其它为白色)
         let str = "\(item.badgeNumber)" as NSString
         let font = NSFont.boldSystemFont(ofSize: radius * 1.15)
+        let badgeTextColor = isWhite ? NSColor.black : NSColor.white
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: NSColor.white
+            .foregroundColor: badgeTextColor
         ]
         let strSize = str.size(withAttributes: attrs)
         let strOrigin = CGPoint(x: center.x - strSize.width / 2, y: center.y - strSize.height / 2)

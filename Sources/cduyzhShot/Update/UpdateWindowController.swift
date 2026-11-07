@@ -15,7 +15,7 @@ public final class UpdateWindowController: NSWindowController, NSWindowDelegate 
             defer: false
         )
         window.title = "软件更新"
-        window.subtitle = "cduyzhShot"
+        window.subtitle = "iScreenshot"
         window.titlebarAppearsTransparent = true
         window.toolbarStyle = .unified
         window.backgroundColor = .windowBackgroundColor
@@ -44,13 +44,12 @@ public final class UpdateWindowController: NSWindowController, NSWindowDelegate 
                 self?.openDownload(for: release)
             }
         ))
-        NSApp.setActivationPolicy(.regular)
         window?.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
     }
 
     private func openDownload(for release: RemoteReleaseInfo) {
-        let targetURL = release.downloadURL ?? release.htmlURL ?? URL(string: "https://github.com/cduyzh/SnapScreen/releases")
+        let targetURL = release.downloadURL ?? release.htmlURL ?? URL(string: "https://github.com/cduyzh/iScreenshot/releases")
         if let targetURL = targetURL {
             NSWorkspace.shared.open(targetURL)
         }
@@ -58,11 +57,8 @@ public final class UpdateWindowController: NSWindowController, NSWindowDelegate 
     }
 
     public func windowWillClose(_ notification: Notification) {
-        let hasOtherWindow = NSApp.windows.contains {
-            $0 !== window && $0.isVisible && $0.styleMask.contains(.titled)
-        }
-        if !hasOtherWindow {
-            NSApp.setActivationPolicy(.accessory)
+        DispatchQueue.main.async {
+            AppState.shared.registerAllHotkeys()
         }
     }
 }
@@ -94,9 +90,6 @@ private struct UpdateDetailView: View {
                     }
 
                     HStack(spacing: 12) {
-                        if let build = release.build {
-                            Text("构建号: \(build)")
-                        }
                         if let date = release.releaseDate {
                             Text("发布时间: \(date)")
                         }

@@ -3,7 +3,7 @@ set -euo pipefail
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 python3 scripts/release_metadata.py
-APP_PATH="${1:-/Applications/SnapScreen.app}"
+APP_PATH="${1:-/Applications/iScreenshot.app}"
 codesign --verify --deep --strict "$APP_PATH"
 python3 - "$APP_PATH" <<'PY'
 import datetime

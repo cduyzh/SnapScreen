@@ -79,12 +79,7 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem?.button {
-            if let image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "cduyzhShot") {
-                image.isTemplate = true
-                button.image = image
-            } else {
-                button.title = "📸"
-            }
+            button.image = Self.createStatusItemIcon()
             button.toolTip = "cduyzhShot \(AppVersion.current.displayString) · 左键截图，右键查看状态与更多操作"
             button.target = self
             button.action = #selector(statusItemClicked(_:))
@@ -96,6 +91,83 @@ public final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         buildMenu()
+    }
+
+    /// 创建高保真、紧凑饱满的纯矢量状态栏截屏图标 (遵循 cduyzh-mac-app-design 标准 18x18pt)
+    public static func createStatusItemIcon() -> NSImage {
+        let size = NSSize(width: 18, height: 18)
+        let image = NSImage(size: size, flipped: false) { rect in
+            guard let context = NSGraphicsContext.current?.cgContext else { return false }
+            context.saveGState()
+
+            let strokeColor = NSColor.black.cgColor
+            let lineWidth: CGFloat = 1.65
+            let cornerRadius: CGFloat = 1.2
+            let armLength: CGFloat = 4.2
+            let margin: CGFloat = 1.2
+            let insetRect = rect.insetBy(dx: margin, dy: margin)
+
+            context.setStrokeColor(strokeColor)
+            context.setFillColor(strokeColor)
+            context.setLineWidth(lineWidth)
+            context.setLineCap(.round)
+            context.setLineJoin(.round)
+
+            // 1. Top-Left Corner
+            let tlPath = CGMutablePath()
+            tlPath.move(to: CGPoint(x: insetRect.minX, y: insetRect.maxY - armLength))
+            tlPath.addLine(to: CGPoint(x: insetRect.minX, y: insetRect.maxY - cornerRadius))
+            tlPath.addQuadCurve(to: CGPoint(x: insetRect.minX + cornerRadius, y: insetRect.maxY),
+                                control: CGPoint(x: insetRect.minX, y: insetRect.maxY))
+            tlPath.addLine(to: CGPoint(x: insetRect.minX + armLength, y: insetRect.maxY))
+            context.addPath(tlPath)
+            context.strokePath()
+
+            // 2. Top-Right Corner
+            let trPath = CGMutablePath()
+            trPath.move(to: CGPoint(x: insetRect.maxX - armLength, y: insetRect.maxY))
+            trPath.addLine(to: CGPoint(x: insetRect.maxX - cornerRadius, y: insetRect.maxY))
+            trPath.addQuadCurve(to: CGPoint(x: insetRect.maxX, y: insetRect.maxY - cornerRadius),
+                                control: CGPoint(x: insetRect.maxX, y: insetRect.maxY))
+            trPath.addLine(to: CGPoint(x: insetRect.maxX, y: insetRect.maxY - armLength))
+            context.addPath(trPath)
+            context.strokePath()
+
+            // 3. Bottom-Left Corner
+            let blPath = CGMutablePath()
+            blPath.move(to: CGPoint(x: insetRect.minX, y: insetRect.minY + armLength))
+            blPath.addLine(to: CGPoint(x: insetRect.minX, y: insetRect.minY + cornerRadius))
+            blPath.addQuadCurve(to: CGPoint(x: insetRect.minX + cornerRadius, y: insetRect.minY),
+                                control: CGPoint(x: insetRect.minX, y: insetRect.minY))
+            blPath.addLine(to: CGPoint(x: insetRect.minX + armLength, y: insetRect.minY))
+            context.addPath(blPath)
+            context.strokePath()
+
+            // 4. Bottom-Right Corner
+            let brPath = CGMutablePath()
+            brPath.move(to: CGPoint(x: insetRect.maxX - armLength, y: insetRect.minY))
+            brPath.addLine(to: CGPoint(x: insetRect.maxX - cornerRadius, y: insetRect.minY))
+            brPath.addQuadCurve(to: CGPoint(x: insetRect.maxX, y: insetRect.minY + cornerRadius),
+                                control: CGPoint(x: insetRect.maxX, y: insetRect.minY))
+            brPath.addLine(to: CGPoint(x: insetRect.maxX, y: insetRect.minY + armLength))
+            context.addPath(brPath)
+            context.strokePath()
+
+            // 5. Center Optical Lens & Focal Point
+            let center = CGPoint(x: rect.midX, y: rect.midY)
+            let lensRadius: CGFloat = 3.3
+            let lensRect = CGRect(x: center.x - lensRadius, y: center.y - lensRadius, width: lensRadius * 2, height: lensRadius * 2)
+            context.strokeEllipse(in: lensRect)
+
+            let dotRadius: CGFloat = 1.15
+            let dotRect = CGRect(x: center.x - dotRadius, y: center.y - dotRadius, width: dotRadius * 2, height: dotRadius * 2)
+            context.fillEllipse(in: dotRect)
+
+            context.restoreGState()
+            return true
+        }
+        image.isTemplate = true
+        return image
     }
 
     /// 保留设置刷新入口，快捷键与权限由面板在每次显示时重新读取。

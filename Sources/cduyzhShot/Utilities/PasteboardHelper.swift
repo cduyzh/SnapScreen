@@ -33,15 +33,24 @@ public final class PasteboardHelper {
 
     @discardableResult
     static func publish(_ image: PreparedImage, to pasteboard: NSPasteboard = .general) -> Bool {
-        var types: [NSPasteboard.PasteboardType] = [.png]
-        if image.tiff != nil { types.append(.tiff) }
-        if image.fileURL != nil { types.append(.fileURL) }
         pasteboard.clearContents()
-        pasteboard.declareTypes(types, owner: nil)
-        let success = pasteboard.setData(image.png, forType: .png)
-        if let tiff = image.tiff { pasteboard.setData(tiff, forType: .tiff) }
-        if let url = image.fileURL { pasteboard.setString(url.absoluteString, forType: .fileURL) }
-        return success
+        var objects: [NSPasteboardWriting] = []
+        if let fileURL = image.fileURL {
+            objects.append(fileURL as NSURL)
+        }
+        if let nsImage = NSImage(data: image.png) {
+            objects.append(nsImage)
+        }
+        if !objects.isEmpty {
+            pasteboard.writeObjects(objects)
+        }
+        if pasteboard.data(forType: .png) == nil {
+            pasteboard.setData(image.png, forType: .png)
+        }
+        if let tiff = image.tiff, pasteboard.data(forType: .tiff) == nil {
+            pasteboard.setData(tiff, forType: .tiff)
+        }
+        return true
     }
 
     /// Copies a local file URL to clipboard.

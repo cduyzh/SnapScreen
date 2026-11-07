@@ -53,17 +53,19 @@ final class UIPreviewDelegate: NSObject, NSApplicationDelegate {
     @objc private func showToolbar() {
         if let toolbarWindow { toolbarWindow.makeKeyAndOrderFront(nil); return }
         let toolbar = ScreenshotToolbarView()
-        let width = max(toolbar.fittingSize.width + 32, 570)
+        let width = max(toolbar.fittingSize.width + 48, 680)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 180), styleMask: [.titled, .closable], backing: .buffered, defer: false)
         window.title = "截图工具栏 · 交互预览"
         window.isReleasedWhenClosed = false
         let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 180))
+        container.wantsLayer = true
+        container.layer?.backgroundColor = NSColor(calibratedRed: 0.12, green: 0.14, blue: 0.18, alpha: 1.0).cgColor
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         container.addSubview(toolbar)
         NSLayoutConstraint.activate([
             toolbar.centerXAnchor.constraint(equalTo: container.centerXAnchor),
             toolbar.centerYAnchor.constraint(equalTo: container.centerYAnchor),
-            toolbar.widthAnchor.constraint(equalToConstant: width - 32),
+            toolbar.widthAnchor.constraint(equalToConstant: width - 48),
             toolbar.heightAnchor.constraint(equalToConstant: 38)
         ])
         window.contentView = container

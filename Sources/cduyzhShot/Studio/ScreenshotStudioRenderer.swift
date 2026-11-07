@@ -387,8 +387,11 @@ public enum ScreenshotStudioRenderer {
             ctx.addPath(barPath)
             ctx.strokePath()
 
-            // Draw lock & URL text
-            let urlText = "cduyzh.local" as NSString
+            // Draw lock & URL text (免费用户锁定官方品牌网址，Pro 会员可自由定制或去除)
+            let isPro = LicenseManager.shared.isPro
+            let defaultBrandUrl = "cduyzh.top/snapscreen"
+            let finalUrl = (isPro && !model.browserUrl.isEmpty) ? model.browserUrl : defaultBrandUrl
+            let urlText = finalUrl as NSString
             let font = NSFont.systemFont(ofSize: max(11, barHeight * 0.44), weight: .medium)
             let textAttrs: [NSAttributedString.Key: Any] = [
                 .font: font,
@@ -408,7 +411,7 @@ public enum ScreenshotStudioRenderer {
 
         } else {
             // Draw Window Title
-            let titleText = (model.windowTitle.isEmpty ? "cduyzhShot" : model.windowTitle) as NSString
+            let titleText = (model.windowTitle.isEmpty ? "iScreenshot" : model.windowTitle) as NSString
             let font = NSFont.systemFont(ofSize: max(11.5, toolbarRect.height * 0.34), weight: .semibold)
             let textAttrs: [NSAttributedString.Key: Any] = [
                 .font: font,

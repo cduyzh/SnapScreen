@@ -14,6 +14,7 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
     public weak var delegate: ScreenshotOverlayDelegate?
     private var activeTextEditor: InPlaceTextEditor?
     private var isOptionPressed: Bool = false
+    private var lastUsedFontSize: CGFloat = 16.0
 
     public var screenImage: CGImage? {
         didSet {
@@ -36,6 +37,8 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         let cocoaY = screenFrame.origin.y + (screenFrame.height - (selectionRect.origin.y + selectionRect.height))
         return CGRect(x: cocoaX, y: cocoaY, width: selectionRect.width, height: selectionRect.height)
     }
+
+    public var hasActiveSelection: Bool { !selectionRect.isEmpty }
 
     private var selectionRect: CGRect = .zero {
         didSet {
@@ -155,9 +158,10 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
             context.fill(bounds)
             context.restoreGState()
 
-            // Draw selection border
+            // Draw selection border in Neo-Aqua Glass
             context.saveGState()
-            context.setStrokeColor(NSColor.systemBlue.cgColor)
+            let aqua = NSColor(calibratedRed: 0.04, green: 0.52, blue: 1.0, alpha: 1.0)
+            context.setStrokeColor(aqua.cgColor)
             context.setLineWidth(1.5)
             context.stroke(selectionRect)
 
@@ -220,11 +224,22 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
     private var dimensionsTagRect: CGRect = .zero
 
     private func drawDimensionsTag(rect: CGRect, in context: CGContext) {
-        let text = "\(Int(rect.width)) × \(Int(rect.height))  ✎" as NSString
+        let w = Int(rect.width)
+        let h = Int(rect.height)
+        let ratioStr: String
+        let ratio = rect.width / max(1.0, rect.height)
+        if abs(ratio - 16.0 / 9.0) < 0.05 { ratioStr = "16:9" }
+        else if abs(ratio - 16.0 / 10.0) < 0.05 { ratioStr = "16:10" }
+        else if abs(ratio - 4.0 / 3.0) < 0.05 { ratioStr = "4:3" }
+        else if abs(ratio - 1.0) < 0.05 { ratioStr = "1:1" }
+        else { ratioStr = String(format: "%.2f", ratio) }
+
+        let text = "\(w) × \(h) · \(ratioStr)" as NSString
         let font = NSFont.monospacedSystemFont(ofSize: 11, weight: .bold)
+        let cyan = NSColor(calibratedRed: 0.0, green: 0.82, blue: 0.95, alpha: 1.0)
         let attrs: [NSAttributedString.Key: Any] = [
             .font: font,
-            .foregroundColor: NSColor.white
+            .foregroundColor: cyan
         ]
         let textSize = text.size(withAttributes: attrs)
         let tagW = textSize.width + 16
@@ -237,16 +252,16 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         self.dimensionsTagRect = tagRect
 
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: 1.5), blur: 4, color: NSColor.black.withAlphaComponent(0.45).cgColor)
+        context.setShadow(offset: CGSize(width: 0, height: 2), blur: 6, color: NSColor.black.withAlphaComponent(0.4).cgColor)
         let path = CGPath(roundedRect: tagRect, cornerWidth: 6, cornerHeight: 6, transform: nil)
         context.addPath(path)
-        context.setFillColor(NSColor(calibratedWhite: 0.12, alpha: 0.94).cgColor)
+        context.setFillColor(NSColor(calibratedRed: 0.06, green: 0.09, blue: 0.16, alpha: 0.88).cgColor)
         context.fillPath()
 
-        // Border around dimensions tag
+        // 0.5px 精细流光边框
         context.addPath(path)
-        context.setStrokeColor(NSColor(white: 1.0, alpha: 0.25).cgColor)
-        context.setLineWidth(1.0)
+        context.setStrokeColor(NSColor(white: 1.0, alpha: 0.22).cgColor)
+        context.setLineWidth(0.6)
         context.strokePath()
 
         NSGraphicsContext.saveGraphicsState()
@@ -327,7 +342,6 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
     }
 
     private func drawResizeHandles(for rect: CGRect, in context: CGContext) {
-        let handleSize: CGFloat = 8.0
         let positions: [CGPoint] = [
             CGPoint(x: rect.minX, y: rect.minY),
             CGPoint(x: rect.midX, y: rect.minY),
@@ -340,15 +354,19 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         ]
 
         context.saveGState()
-        context.setShadow(offset: CGSize(width: 0, height: -1), blur: 3, color: NSColor.black.withAlphaComponent(0.35).cgColor)
-        context.setFillColor(NSColor.white.cgColor)
-        context.setStrokeColor(NSColor.systemBlue.cgColor)
-        context.setLineWidth(1.8)
+        let aqua = NSColor(calibratedRed: 0.04, green: 0.52, blue: 1.0, alpha: 1.0)
+        context.setShadow(offset: .zero, blur: 4, color: aqua.withAlphaComponent(0.5).cgColor)
+        context.setFillColor(aqua.cgColor)
+        context.setStrokeColor(NSColor.white.withAlphaComponent(0.92).cgColor)
+        context.setLineWidth(1.0)
 
         for pt in positions {
-            let hRect = CGRect(x: pt.x - handleSize / 2, y: pt.y - handleSize / 2, width: handleSize, height: handleSize)
-            context.fillEllipse(in: hRect)
-            context.strokeEllipse(in: hRect)
+            let hRect = CGRect(x: pt.x - 3.5, y: pt.y - 3.5, width: 7, height: 7)
+            let p = CGPath(ellipseIn: hRect, transform: nil)
+            context.addPath(p)
+            context.fillPath()
+            context.addPath(p)
+            context.strokePath()
         }
         context.restoreGState()
     }
@@ -652,8 +670,9 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
             if selectionRect.isEmpty && !magnifierView.isHidden {
                 let hex = magnifierView.currentHexColor
                 PasteboardHelper.copyString(hex)
-                SoundManager.shared.playCameraShutterSound()
-                NotificationHelper.notifyScreenshotSaved(url: URL(string: "color://\(hex)")!)
+                SoundManager.shared.playColorCopiedSound()
+                NotificationHelper.notifyColorCopied(hex: hex)
+                magnifierView.triggerCopyFeedback()
                 return
             }
 
@@ -681,6 +700,9 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
 
         case 1 where event.modifierFlags.contains(.command): // Cmd+S
             toolbarDidClickSave()
+
+        case 35 where event.modifierFlags.contains(.option): // Opt+P
+            toolbarDidClickPin()
 
         default:
             super.keyDown(with: event)
@@ -723,7 +745,8 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         let editor = InPlaceTextEditor(
             origin: point,
             color: toolbar.currentColor,
-            maxBounds: selectionRect
+            maxBounds: selectionRect,
+            initialFontSize: lastUsedFontSize
         )
         editor.editorDelegate = self
         addSubview(editor)
@@ -731,18 +754,23 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
     }
 
     // MARK: - InPlaceTextEditorDelegate
-    public func textEditorDidCommit(text: String, at point: CGPoint) {
+    public func textEditorDidCommit(text: String, at point: CGPoint, fontSize: CGFloat, color: NSColor) {
+        lastUsedFontSize = fontSize
         let item = AnnotationItem(
             tool: .text,
             startPoint: point,
             endPoint: point,
-            color: toolbar.currentColor,
+            color: color,
             text: text,
-            fontSize: 16.0
+            fontSize: fontSize
         )
         annotations.append(item)
         activeTextEditor = nil
         needsDisplay = true
+    }
+
+    public func textEditorDidCommit(text: String, at point: CGPoint) {
+        textEditorDidCommit(text: text, at: point, fontSize: lastUsedFontSize, color: toolbar.currentColor)
     }
 
     public func textEditorDidCancel() {
@@ -897,33 +925,56 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         return resultImage.cgImage(forProposedRect: nil, context: nil, hints: nil) ?? cropped
     }
 
+    /// 生成最终截图；若用户开启“截图自动美化”，则自动套用设定的美化样式
+    private func generateFinalProcessedImage() -> CGImage? {
+        guard let base = generateRenderedImage() else { return nil }
+        if UserPreferences.shared.autoBeautifyScreenshot {
+            let model = ScreenshotStudioModel(config: UserPreferences.shared.studioConfig)
+            if let beautified = ScreenshotStudioRenderer.render(image: base, model: model, targetScale: 1.0) {
+                return beautified
+            }
+        }
+        return base
+    }
+
     private func finishAndCopy() {
-        guard let finalImg = generateRenderedImage() else { return }
+        guard let finalImg = generateFinalProcessedImage() else { return }
         SoundManager.shared.playCameraShutterSound()
 
-        // 1. 默认写到系统剪贴板
-        _ = PasteboardHelper.copyImage(finalImg, alsoAsFile: false)
+        // 1. 复制到系统剪贴板（按偏好决定是否附带临时文件引用）
+        _ = PasteboardHelper.copyImage(finalImg, alsoAsFile: UserPreferences.shared.copyAsTempFileToClipboard)
 
-        // 2. 只有点“完成”时，才自动保存到预设设置的目录（默认 ~/Downloads）
-        let saveDir = UserPreferences.shared.saveDirectoryURL
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd_HH.mm.ss"
-        let dateStr = formatter.string(from: Date())
-        let ext = UserPreferences.shared.screenshotFormat.lowercased() == "jpeg" ? "jpg" : "png"
-        let fileURL = saveDir.appendingPathComponent("cduyzhShot_\(dateStr).\(ext)")
+        var savedURL: URL?
+        // 2. 默认只保存到剪贴板；仅当用户显式开启“截图完成时自动保存到文件”时才写入保存目录
+        if UserPreferences.shared.autoSaveScreenshotToFile {
+            let saveDir = UserPreferences.shared.saveDirectoryURL
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd_HH.mm.ss"
+            let dateStr = formatter.string(from: Date())
+            let ext = UserPreferences.shared.screenshotFormat.lowercased() == "jpeg" ? "jpg" : "png"
+            let fileURL = saveDir.appendingPathComponent("cduyzhShot_\(dateStr).\(ext)")
 
-        let rep = NSBitmapImageRep(cgImage: finalImg)
-        let fileType: NSBitmapImageRep.FileType = ext == "jpg" ? .jpeg : .png
-        if let data = rep.representation(using: fileType, properties: [:]) {
-            try? data.write(to: fileURL)
-            NotificationHelper.notifyScreenshotSaved(url: fileURL)
+            let rep = NSBitmapImageRep(cgImage: finalImg)
+            let fileType: NSBitmapImageRep.FileType = ext == "jpg" ? .jpeg : .png
+            if let data = rep.representation(using: fileType, properties: [:]) {
+                try? data.write(to: fileURL)
+                NotificationHelper.notifyScreenshotSaved(url: fileURL)
+                savedURL = fileURL
+            }
         }
 
         // 3. 浮窗提示剪贴板与保存，并提供钉在屏幕上的贴图入口
+        let isBeautified = UserPreferences.shared.autoBeautifyScreenshot
+        let thumbMsg: String
+        if savedURL != nil {
+            thumbMsg = isBeautified ? "已自动美化并保存至下载目录，已同步复制" : "已写入剪贴板并自动保存至下载目录"
+        } else {
+            thumbMsg = isBeautified ? "已自动美化并复制到剪贴板，直接 ⌘V 粘贴" : "已复制到剪贴板，直接 ⌘V 粘贴"
+        }
         FloatingThumbnailWindow.shared.show(
             image: finalImg,
-            fileURL: fileURL,
-            message: "已写入剪贴板并自动保存至下载目录"
+            fileURL: savedURL,
+            message: thumbMsg
         )
 
         delegate?.overlayDidFinish(image: finalImg, rect: selectionRect)
@@ -931,10 +982,12 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
 
     // MARK: - ScreenshotToolbarDelegate
     public func toolbarDidSelectTool(_ tool: AnnotationTool) {}
-    public func toolbarDidSelectColor(_ color: NSColor) {}
+    public func toolbarDidSelectColor(_ color: NSColor) {
+        activeTextEditor?.updateColor(color)
+    }
 
     public func toolbarDidClickPin() {
-        guard let finalImg = generateRenderedImage() else { return }
+        guard let finalImg = generateFinalProcessedImage() else { return }
         SoundManager.shared.playCameraShutterSound()
         delegate?.overlayDidRequestPin(image: finalImg, rect: selectionCocoaScreenRect)
     }
@@ -965,7 +1018,7 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
 
     public func toolbarDidClickSave() {
         // 用户点击下载保存图标后，绝不自动保存，而是弹出 NSSavePanel 让用户自由选择保存目录和文件名
-        guard let finalImg = generateRenderedImage() else { return }
+        guard let finalImg = generateFinalProcessedImage() else { return }
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd_HH.mm.ss"
         let dateStr = formatter.string(from: Date())
@@ -978,16 +1031,20 @@ public final class ScreenshotOverlayView: NSView, ScreenshotToolbarDelegate, InP
         panel.canCreateDirectories = true
 
         panel.begin { [weak self] response in
-            guard response == .OK, let url = panel.url, let self = self else { return }
-            let rep = NSBitmapImageRep(cgImage: finalImg)
-            let isJpg = url.pathExtension.lowercased() == "jpg" || url.pathExtension.lowercased() == "jpeg"
-            let fileType: NSBitmapImageRep.FileType = isJpg ? .jpeg : .png
-            if let data = rep.representation(using: fileType, properties: [:]) {
-                try? data.write(to: url)
-                SoundManager.shared.playCameraShutterSound()
-                NotificationHelper.notifyScreenshotSaved(url: url)
-                FloatingThumbnailWindow.shared.show(image: finalImg, fileURL: url, message: "已成功另存为文件")
-                self.delegate?.overlayDidFinish(image: finalImg, rect: self.selectionRect)
+            guard let self = self else { return }
+            if response == .OK, let url = panel.url {
+                let rep = NSBitmapImageRep(cgImage: finalImg)
+                let isJpg = url.pathExtension.lowercased() == "jpg" || url.pathExtension.lowercased() == "jpeg"
+                let fileType: NSBitmapImageRep.FileType = isJpg ? .jpeg : .png
+                if let data = rep.representation(using: fileType, properties: [:]) {
+                    try? data.write(to: url)
+                    SoundManager.shared.playCameraShutterSound()
+                    NotificationHelper.notifyScreenshotSaved(url: url)
+                    FloatingThumbnailWindow.shared.show(image: finalImg, fileURL: url, message: "已成功另存为文件")
+                    self.delegate?.overlayDidFinish(image: finalImg, rect: self.selectionRect)
+                }
+            } else {
+                self.window?.makeKeyAndOrderFront(nil)
             }
         }
     }

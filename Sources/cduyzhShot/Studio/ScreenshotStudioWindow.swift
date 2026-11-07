@@ -3,6 +3,12 @@ import CoreGraphics
 import SwiftUI
 import UniformTypeIdentifiers
 
+// MARK: - Studio Mode
+public enum StudioMode: String, Equatable {
+    case settings = "settings"
+    case capture = "capture"
+}
+
 /// 每轮渲染使用独立参数，防止快速切换时混用不同选项。
 public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate {
     public static let shared = ScreenshotStudioWindowController()
@@ -15,6 +21,7 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
     private var savePanel: NSSavePanel?
     private var previewWork: DispatchWorkItem?
     private var renderRevision = 0
+    public private(set) var currentMode: StudioMode = .capture
     private let renderQueue: OperationQueue = {
         let queue = OperationQueue()
         queue.name = "com.cduyzh.shot.studio-render"
@@ -23,17 +30,43 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
         return queue
     }()
 
-    private override init() { super.init() }
+    private override init() {
+        super.init()
+        model.onConfigChanged = { [weak self] newConfig in
+            guard let self else { return }
+            if self.currentMode == .settings {
+                if UserPreferences.shared.studioConfig != newConfig {
+                    UserPreferences.shared.studioConfig = newConfig
+                    UserDefaults.standard.synchronize()
+                }
+            }
+            self.updatePreview()
+        }
+    }
 
-    public func openStudio(image: CGImage) {
+    public func openStudio(image: CGImage, mode: StudioMode = .capture) {
+        currentMode = mode
+        presentation.mode = mode
         currentSourceImage = image
+        model.apply(config: UserPreferences.shared.studioConfig)
         renderedPreviewImage = nil
         presentation.preview = nil
         presentation.sourceSize = "\(image.width) × \(image.height)"
         presentation.message = ""
         presentation.outputSize = ""
         presentation.isExporting = false
+
+        let windowTitle = (mode == .settings) ? "美化预设设置" : "图片美化"
+        let windowSubtitle = (mode == .settings) ? "默认样式配置" : "iScreenshot"
+
         if let window {
+            window.title = windowTitle
+            window.subtitle = windowSubtitle
+            if window.isMiniaturized {
+                window.deminiaturize(nil)
+            }
+            window.level = .floating
+            window.orderFrontRegardless()
             window.makeKeyAndOrderFront(nil)
         } else {
             let win = NSWindow(
@@ -41,17 +74,19 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
                 styleMask: [.titled, .closable, .miniaturizable, .resizable],
                 backing: .buffered, defer: false
             )
-            win.title = "图片美化"
-            win.subtitle = "cduyzhShot"
+            win.title = windowTitle
+            win.subtitle = windowSubtitle
             win.titlebarAppearsTransparent = true
             win.toolbarStyle = .unified
             win.backgroundColor = .windowBackgroundColor
             win.minSize = NSSize(width: 840, height: 600)
             win.isReleasedWhenClosed = false
+            win.level = .floating
             win.delegate = self
             win.contentView = NSHostingView(rootView: ScreenshotStudioView(
                 model: model, presentation: presentation,
                 onChange: { [weak self] in self?.updatePreview() },
+                onSaveSettings: { [weak self] in self?.saveSettingsClicked() },
                 onCopy: { [weak self] in self?.copyAndCloseClicked() },
                 onSave: { [weak self] in self?.saveAsClicked() },
                 onPin: { [weak self] in self?.pinClicked() },
@@ -59,6 +94,7 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
             ))
             win.center()
             window = win
+            win.orderFrontRegardless()
             win.makeKeyAndOrderFront(nil)
         }
         NSApp.activate(ignoringOtherApps: true)
@@ -67,6 +103,13 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
 
     public func updatePreview() {
         guard currentSourceImage != nil, window != nil else { return }
+        let newConfig = model.toConfig()
+        if currentMode == .settings {
+            if UserPreferences.shared.studioConfig != newConfig {
+                UserPreferences.shared.studioConfig = newConfig
+                UserDefaults.standard.synchronize()
+            }
+        }
         renderRevision += 1
         let revision = renderRevision
         previewWork?.cancel()
@@ -98,7 +141,7 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
             self.renderQueue.addOperation(operation)
         }
         previewWork = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.09, execute: work)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05, execute: work)
     }
 
     private var exportImage: CGImage? {
@@ -106,8 +149,21 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
         return renderedPreviewImage
     }
 
+    /// 设置模式下的明确保存设置并退出：绝对不污染剪贴板，不弹浮窗
+    private func saveSettingsClicked() {
+        let newConfig = model.toConfig()
+        UserPreferences.shared.studioConfig = newConfig
+        UserDefaults.standard.synchronize()
+        playFeedbackSound()
+        window?.close()
+    }
+
     private func copyAndCloseClicked() {
         guard let image = exportImage else { return }
+        if UserPreferences.shared.autoBeautifyScreenshot {
+            UserPreferences.shared.studioConfig = model.toConfig()
+            UserDefaults.standard.synchronize()
+        }
         presentation.isExporting = true
         let revision = renderRevision
         let alsoAsFile = UserPreferences.shared.copyAsTempFileToClipboard
@@ -201,6 +257,11 @@ public final class ScreenshotStudioWindowController: NSObject, NSWindowDelegate 
         presentation.preview = nil
         presentation.isRendering = false
         presentation.isExporting = false
+
+        // 窗口关闭后刷新全局热键状态，确保退出编辑后快捷键立即 100% 可用
+        DispatchQueue.main.async {
+            AppState.shared.registerAllHotkeys()
+        }
     }
 }
 
